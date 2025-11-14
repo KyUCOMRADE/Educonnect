@@ -1,41 +1,56 @@
 import express from "express";
 import Enrollment from "../models/Enrollment.js";
-import { verifyToken } from "../middleware/auth.js";
+import Course from "../models/Course.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-// ✅ Enroll in a course
-router.post("/", verifyToken, async (req, res) => {
+// Enroll in a course
+router.post("/:courseId", auth, async (req, res) => {
   try {
-    const { courseId } = req.body;
-    const existing = await Enrollment.findOne({
-      student: req.user.id,
-      course: courseId,
+    const { courseId } = req.params;
+    const userId = req.user.id;
+
+    // Check if course exists
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Check if already enrolled
+    const existingEnrollment = await Enrollment.findOne({ user: userId, course: courseId });
+    if (existingEnrollment) {
+      return res.status(400).json({ message: "You are already enrolled in this course" });
+    }
+
+    // Create new enrollment
+    const newEnrollment = new Enrollment({ user: userId, course: courseId });
+    await newEnrollment.save();
+
+    res.status(201).json({
+      message: "Enrolled successfully",
+      enrollment: newEnrollment
     });
-
-    if (existing)
-      return res.status(400).json({ message: "Already enrolled in this course" });
-
-    const enrollment = new Enrollment({
-      student: req.user.id,
-      course: courseId,
-    });
-    await enrollment.save();
-
-    res.status(201).json({ message: "Enrollment successful!" });
   } catch (error) {
-    res.status(500).json({ message: "Error enrolling in course" });
+    console.error("Enrollment error:", error.message);
+    res.status(500).json({ message: "Server error during enrollment" });
   }
 });
 
-// ✅ Get all courses a student enrolled in
-router.get("/my-courses", verifyToken, async (req, res) => {
+// Get all enrollments for the logged-in user
+router.get("/", auth, async (req, res) => {
   try {
-    const enrollments = await Enrollment.find({ student: req.user.id })
-      .populate("course");
-    res.json(enrollments);
+    const userId = req.user.id;
+    const enrollments = await Enrollment.find({ user: userId }).populate("course");
+
+    if (enrollments.length === 0) {
+      return res.status(404).json({ message: "No enrolled courses found" });
+    }
+
+    res.status(200).json(enrollments);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching enrolled courses" });
+    console.error("Fetch enrollments error:", error.message);
+    res.status(500).json({ message: "Server error fetching enrollments" });
   }
 });
 

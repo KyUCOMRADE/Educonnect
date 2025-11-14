@@ -1,44 +1,27 @@
 import express from "express";
 import Course from "../models/Course.js";
-import User from "../models/User.js";
+import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Existing routes (GET, POST)...
-
-// ✅ Enroll in a course
-router.post("/:id/enroll", async (req, res) => {
-  const { userId } = req.body;
-  const { id } = req.params;
-
+// ✅ Get all courses (public)
+router.get("/", async (req, res) => {
   try {
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.enrolledCourses.includes(id)) {
-      return res.status(400).json({ message: "Already enrolled" });
-    }
-
-    user.enrolledCourses.push(id);
-    await user.save();
-
-    res.json({ message: "Enrollment successful" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Enrollment failed" });
+    const courses = await Course.find();
+    res.json(courses);
+  } catch (err) {
+    res.status(500).json({ message: "Server error fetching courses" });
   }
 });
 
-// ✅ Get user's enrolled courses
-router.get("/my/:userId", async (req, res) => {
+// ✅ Add new course (protected)
+router.post("/", authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).populate("enrolledCourses");
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    res.json(user.enrolledCourses);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to fetch enrolled courses" });
+    const newCourse = new Course(req.body);
+    await newCourse.save();
+    res.status(201).json({ message: "Course created", course: newCourse });
+  } catch (err) {
+    res.status(500).json({ message: "Server error adding course" });
   }
 });
 
