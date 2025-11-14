@@ -5,12 +5,15 @@ export default function Courses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Fetch all available courses
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         const res = await fetch("/api/courses");
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to load courses");
+
+        if (!res.ok) throw new Error(data.message || "Failed to fetch courses");
+
         setCourses(data);
       } catch (err) {
         setError(err.message);
@@ -22,49 +25,77 @@ export default function Courses() {
     fetchCourses();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-gray-600 text-lg">Loading courses...</p>
-      </div>
-    );
-  }
+  // Handle enrollment
+  const handleEnroll = async (courseId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
 
-  if (error) {
+      if (!token || !userId) {
+        alert("Please log in to enroll in a course.");
+        return;
+      }
+
+      const res = await fetch("/api/enrollments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId, courseId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Enrollment failed");
+
+      alert("Enrollment successful!");
+    } catch (err) {
+      console.error("Enrollment error:", err);
+      alert(err.message);
+    }
+  };
+
+  if (loading) return <p className="text-center mt-10">Loading courses...</p>;
+  if (error)
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-red-500 text-lg">{error}</p>
-      </div>
+      <p className="text-center text-red-500 mt-10">
+        Error: {error}. Please try again.
+      </p>
     );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <h1 className="text-3xl font-bold text-center mb-10 text-blue-700">
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <h1 className="text-3xl font-bold text-center mb-8 text-blue-700">
         Available Courses
       </h1>
 
       {courses.length === 0 ? (
-        <p className="text-center text-gray-500 text-lg">No courses added yet.</p>
+        <p className="text-center text-gray-600">
+          No courses available. Please check again later.
+        </p>
       ) : (
-        <div className="max-w-6xl mx-auto grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {courses.map((course) => (
             <div
               key={course._id}
-              className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
+              className="bg-white shadow-md rounded-lg p-5 border hover:shadow-lg transition"
             >
-              <img
-                src={course.image || "https://via.placeholder.com/400x250?text=No+Image"}
-                alt={course.title}
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-5">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  {course.title}
-                </h3>
-                <p className="text-gray-600 mb-3 line-clamp-3">{course.description}</p>
-                <p className="text-sm text-gray-500">By: {course.instructor}</p>
-              </div>
+              <h2 className="text-xl font-semibold mb-2 text-gray-800">
+                {course.title}
+              </h2>
+              <p className="text-gray-600 mb-3">
+                {course.description?.slice(0, 100)}...
+              </p>
+              <p className="text-sm text-gray-500 mb-4">
+                Instructor:{" "}
+                <span className="font-medium">{course.instructor}</span>
+              </p>
+              <button
+                onClick={() => handleEnroll(course._id)}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Enroll
+              </button>
             </div>
           ))}
         </div>

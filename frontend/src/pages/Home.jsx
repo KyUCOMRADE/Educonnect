@@ -31,10 +31,11 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch("/api/enrollments", {
+      const res = await fetch(`/api/enrollments/${courseId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ courseId }),
