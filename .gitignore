@@ -26,14 +26,14 @@ pnpm-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
-server/.env
+backend/.env
 client/.env
 
 ############################
 # Node Dependencies
 ############################
 node_modules/
-server/node_modules/
+backend/node_modules/
 client/node_modules/
 
 ############################
