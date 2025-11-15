@@ -1,57 +1,45 @@
 import { useEffect, useState } from "react";
 
+const API = "http://localhost:5000/api";
+
 export default function MyCourses() {
-  const [courses, setCourses] = useState([]);
-  const [error, setError] = useState("");
+  const [myCourses, setMyCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMyCourses = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("You must be logged in to view your courses.");
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/enrollments/my-courses", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.message || "Failed to fetch courses");
-        setCourses(data);
-      } catch (err) {
-        setError(err.message);
-      }
-    };
-
-    fetchMyCourses();
+    fetch(`${API}/my-courses`, { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        setMyCourses(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
+  if (loading) return <div className="p-6">Loading your courses...</div>;
+
   return (
-    <div className="min-h-screen p-6 bg-gray-50">
-      <h1 className="text-3xl font-bold mb-6 text-center">My Enrolled Courses</h1>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-4">My Courses</h1>
 
-      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-
-      {courses.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course) => (
-            <div
-              key={course._id}
-              className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition"
-            >
-              <h2 className="text-xl font-semibold">{course.title}</h2>
-              <p className="text-gray-600 mt-2">{course.description}</p>
-              <p className="text-sm mt-3 text-blue-600">Instructor: {course.instructor}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-center text-gray-500">
-          You haven’t enrolled in any courses yet.
-        </p>
+      {myCourses.length === 0 && (
+        <p className="text-gray-600">You have not enrolled in any course yet.</p>
       )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {myCourses.map(course => (
+          <div key={course._id} className="p-5 bg-white shadow rounded">
+            <h2 className="text-xl font-bold">{course.title}</h2>
+            <p className="mt-2 text-gray-600">{course.description}</p>
+
+            <button
+              className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              Open Course
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

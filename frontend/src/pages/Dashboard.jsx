@@ -1,54 +1,80 @@
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
+const API = "http://localhost:5000/api";
+
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+
+  const fetchCourses = () => {
+    fetch(`${API}/my-teacher-courses`, { credentials: "include" })
+      .then(res => res.json())
+      .then(data => setCourses(data));
+  };
 
   useEffect(() => {
-    // Simulate fetching user info from token
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-    } else {
-      // In a real app, you'd verify the token and get user info
-      setUser({ name: "Admin User", role: "instructor" });
+    fetchCourses();
+  }, []);
+
+  const addCourse = async () => {
+    if (!title.trim() || !description.trim()) {
+      alert("Please fill in all fields.");
+      return;
     }
-  }, [navigate]);
+
+    await fetch(`${API}/add-course`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ title, description })
+    });
+
+    setTitle("");
+    setDescription("");
+    fetchCourses();
+    alert("Course added.");
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-blue-600 text-white py-4 shadow-md">
-        <h1 className="text-3xl font-bold text-center">Dashboard</h1>
-      </header>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-4">Teacher Dashboard</h1>
 
-      <main className="max-w-5xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-        <h2 className="text-2xl font-semibold mb-6">
-          Welcome, {user ? user.name : "Loading..."}
-        </h2>
+      <div className="bg-white shadow p-5 rounded mb-6">
+        <h2 className="text-xl font-semibold mb-3">Add a New Course</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div
-            onClick={() => navigate("/add-course")}
-            className="cursor-pointer p-6 bg-blue-100 border border-blue-300 rounded-xl text-center hover:bg-blue-200 transition"
-          >
-            <h3 className="text-xl font-semibold text-blue-700 mb-2">
-              ➕ Add New Course
-            </h3>
-            <p>Add a new course to your platform.</p>
+        <input
+          className="border w-full p-3 mb-3 rounded"
+          placeholder="Course Title"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+        />
+
+        <textarea
+          className="border w-full p-3 mb-3 rounded"
+          placeholder="Course Description"
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+        />
+
+        <button
+          onClick={addCourse}
+          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+        >
+          Add Course
+        </button>
+      </div>
+
+      <h2 className="text-2xl font-bold mb-3">Your Courses</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {courses.map(course => (
+          <div key={course._id} className="bg-white p-5 shadow rounded">
+            <h3 className="text-lg font-bold">{course.title}</h3>
+            <p className="mt-2 text-gray-600">{course.description}</p>
           </div>
-
-          <div
-            onClick={() => navigate("/my-courses")}
-            className="cursor-pointer p-6 bg-green-100 border border-green-300 rounded-xl text-center hover:bg-green-200 transition"
-          >
-            <h3 className="text-xl font-semibold text-green-700 mb-2">
-              📚 My Courses
-            </h3>
-            <p>View and manage your created courses.</p>
-          </div>
-        </div>
-      </main>
+        ))}
+      </div>
     </div>
   );
 }

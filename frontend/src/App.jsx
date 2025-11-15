@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses"; 
 import MyCourses from "./pages/MyCourses";
 import AddCourse from "./pages/AddCourse";
+
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
