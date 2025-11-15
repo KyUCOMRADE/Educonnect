@@ -1,50 +1,28 @@
+// seedCourses.js
 import mongoose from "mongoose";
+import Course from "./models/Course.js"; // adjust the path
 import dotenv from "dotenv";
-import Course from "./models/Course.js";
 
 dotenv.config();
 
-// Connect to MongoDB Atlas
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Connected to MongoDB for seeding"))
-  .catch((err) => console.error("❌ MongoDB connection failed:", err));
-
-// Sample courses
-const sampleCourses = [
-  {
-    title: "Full Stack Web Development",
-    description: "Learn HTML, CSS, JavaScript, React, and Node.js to build powerful web apps.",
-    instructor: "Joseph Chege",
-  },
-  {
-    title: "Data Science with Python",
-    description: "Master data analysis, visualization, and machine learning using Python.",
-    instructor: "Keshii",
-  },
-  {
-    title: "UI/UX Design Principles",
-    description: "Learn design thinking, wireframing, and prototyping to craft engaging user experiences.",
-    instructor: "Anne Kariuki",
-  },
-  {
-    title: "Cybersecurity Fundamentals",
-    description: "Understand how to secure systems and networks from common cyber threats.",
-    instructor: "Dennis Oluoch",
-  },
+const courses = [
+  { title: "Full Stack Web Development", description: "Learn HTML, CSS, JS, Node.js, React", instructor: "Admin" },
+  { title: "Frontend Development with React & Tailwind", description: "Build responsive frontends", instructor: "Admin" },
+  { title: "Backend Development with Node.js & Express", description: "Server-side development", instructor: "Admin" },
+  { title: "Android App Development (Kotlin)", description: "Learn to make Android apps", instructor: "Admin" },
+  { title: "iOS App Development (Swift)", description: "Learn to make iOS apps", instructor: "Admin" },
+  { title: "Python for Data Science", description: "Data analysis & visualization", instructor: "Admin" },
+  { title: "Machine Learning & AI Basics", description: "Introduction to ML & AI", instructor: "Admin" },
+  { title: "Ethical Hacking & Penetration Testing", description: "Learn cybersecurity basics", instructor: "Admin" },
+  { title: "AWS Cloud Practitioner", description: "Introduction to AWS Cloud", instructor: "Admin" },
+  { title: "Blockchain Development & Smart Contracts", description: "Build blockchain apps", instructor: "Admin" },
 ];
 
-// Function to seed database
-const seedCourses = async () => {
-  try {
-    await Course.deleteMany(); // clear previous data
-    await Course.insertMany(sampleCourses);
-    console.log("🌱 Sample courses seeded successfully!");
-    mongoose.connection.close();
-  } catch (error) {
-    console.error("❌ Error seeding courses:", error);
-    mongoose.connection.close();
-  }
-};
-
-seedCourses();
+mongoose.connect(process.env.MONGO_URI)
+.then(async () => {
+  console.log("Connected to MongoDB");
+  await Course.insertMany(courses);
+  console.log("Courses seeded successfully!");
+  mongoose.disconnect();
+})
+.catch(err => console.error(err));
