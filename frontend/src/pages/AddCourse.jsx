@@ -1,101 +1,88 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function AddCourse() {
-  const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [instructor, setInstructor] = useState("");
-  const [message, setMessage] = useState("");
+  const [existingCourses, setExistingCourses] = useState([]);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
-  // ✅ Protect route — only Admins and Instructors allowed
+  // Fetch all courses to check duplicates
   useEffect(() => {
-    const role = localStorage.getItem("role");
-    if (role !== "admin" && role !== "instructor") {
-      alert("Access denied. Only admins or instructors can add courses.");
-      navigate("/");
-    }
-  }, [navigate]);
+    fetch("http://localhost:5000/api/courses")
+      .then((res) => res.json())
+      .then((data) => setExistingCourses(data))
+      .catch((err) => console.error(err));
+  }, []);
 
-  // ✅ Submit course
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
+    setError("");
+    setSuccess("");
 
-    const token = localStorage.getItem("token");
+    // Check if course already exists
+    const duplicate = existingCourses.find(
+      (course) => course.title.toLowerCase() === title.toLowerCase()
+    );
+    if (duplicate) {
+      setError("This course already exists!");
+      return;
+    }
 
     try {
-      const res = await fetch("/api/courses", {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/courses", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, instructor }),
+        body: JSON.stringify({ title, description }),
+        credentials: "include",
       });
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || "Error adding course");
-
-      setMessage("✅ Course added successfully!");
-      setTitle("");
-      setDescription("");
-      setInstructor("");
+      if (res.ok) {
+        setSuccess("Course added successfully!");
+        setTitle("");
+        setDescription("");
+        // Optionally redirect to home or courses
+        navigate("/courses");
+      } else {
+        const data = await res.json();
+        setError(data.message || "Failed to add course.");
+      }
     } catch (err) {
-      setMessage(`❌ ${err.message}`);
+      console.error(err);
+      setError("An error occurred while adding the course.");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-md rounded-lg p-8 w-full max-w-lg"
-      >
-        <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">
-          Add New Course
-        </h2>
-
-        {message && (
-          <p
-            className={`mb-4 text-center font-medium ${
-              message.startsWith("✅") ? "text-green-600" : "text-red-500"
-            }`}
-          >
-            {message}
-          </p>
-        )}
-
+    <div className="max-w-lg mx-auto p-6 mt-6 border rounded shadow">
+      <h1 className="text-2xl font-bold mb-4">Add a New Course</h1>
+      {error && <p className="text-red-500 mb-2">{error}</p>}
+      {success && <p className="text-green-500 mb-2">{success}</p>}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="text"
           placeholder="Course Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
           required
+          className="border p-2 rounded"
         />
-
         <textarea
           placeholder="Course Description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full p-3 mb-4 border rounded h-32 focus:outline-none focus:ring-2 focus:ring-blue-400"
           required
+          className="border p-2 rounded"
         />
-
-        <input
-          type="text"
-          placeholder="Instructor Name"
-          value={instructor}
-          onChange={(e) => setInstructor(e.target.value)}
-          className="w-full p-3 mb-6 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          required
-        />
-
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white p-3 rounded font-semibold hover:bg-blue-700 transition"
+          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
         >
           Add Course
         </button>

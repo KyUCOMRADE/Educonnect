@@ -1,48 +1,54 @@
-import { useEffect, useState } from "react";
-
-const API = "http://localhost:5000/api";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Courses() {
   const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(`${API}/courses`)
-      .then(res => res.json())
-      .then(data => {
-        setCourses(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    fetch("http://localhost:5000/api/courses")
+      .then((res) => res.json())
+      .then((data) => setCourses(data))
+      .catch((err) => setError("Failed to load courses."));
   }, []);
 
-  const enroll = async (id) => {
+  const handleEnroll = async (courseId) => {
     try {
-      await fetch(`${API}/enroll/${id}`, {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/enrollments/${courseId}`, {
         method: "POST",
-        credentials: "include"
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
       });
-      alert("Enrolled successfully");
+
+      if (res.ok) {
+        alert("Enrolled successfully!");
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to enroll.");
+      }
     } catch (err) {
-      alert("Enrollment failed");
+      console.error(err);
+      alert("Error enrolling in course.");
     }
   };
 
-  if (loading) return <div className="p-6">Loading courses...</div>;
-
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">Available Courses</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {courses.map(course => (
-          <div key={course._id} className="p-5 bg-white shadow rounded">
-            <h2 className="text-xl font-bold">{course.title}</h2>
-            <p className="mt-2 text-gray-600">{course.description}</p>
-
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Available Courses</h1>
+      {error && <p className="text-red-500">{error}</p>}
+      <div className="grid md:grid-cols-2 gap-6">
+        {courses.map((course) => (
+          <div key={course._id} className="border p-4 rounded shadow">
+            <h2 className="text-xl font-semibold mb-2">{course.title}</h2>
+            <p className="mb-4">{course.description}</p>
             <button
-              onClick={() => enroll(course._id)}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              onClick={() => handleEnroll(course._id)}
+              className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
             >
               Enroll
             </button>

@@ -1,45 +1,49 @@
-import { useEffect, useState } from "react";
-
-const API = "http://localhost:5000/api";
+// src/pages/MyCourses.jsx
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function MyCourses() {
-  const [myCourses, setMyCourses] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${API}/my-courses`, { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        setMyCourses(data);
+    const fetchMyCourses = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/my-courses", {
+          withCredentials: true, // Important if your backend uses cookies/auth
+        });
+        setCourses(response.data);
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load your courses. Please try again.");
+        setLoading(false);
+      }
+    };
+
+    fetchMyCourses();
   }, []);
 
-  if (loading) return <div className="p-6">Loading your courses...</div>;
+  if (loading) return <p className="text-center mt-8">Loading your courses...</p>;
+  if (error) return <p className="text-center mt-8 text-red-500">{error}</p>;
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">My Courses</h1>
-
-      {myCourses.length === 0 && (
-        <p className="text-gray-600">You have not enrolled in any course yet.</p>
+      <h1 className="text-2xl font-bold mb-4">My Courses</h1>
+      {courses.length === 0 ? (
+        <p>You have not enrolled in any courses yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {courses.map((course) => (
+            <div key={course._id} className="border p-4 rounded shadow hover:shadow-lg transition">
+              <h2 className="font-semibold text-lg">{course.title}</h2>
+              <p className="text-sm mt-2">{course.description}</p>
+              <p className="text-xs mt-1 text-gray-500">Instructor: {course.instructor}</p>
+            </div>
+          ))}
+        </div>
       )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {myCourses.map(course => (
-          <div key={course._id} className="p-5 bg-white shadow rounded">
-            <h2 className="text-xl font-bold">{course.title}</h2>
-            <p className="mt-2 text-gray-600">{course.description}</p>
-
-            <button
-              className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-              Open Course
-            </button>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
