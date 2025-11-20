@@ -13,9 +13,11 @@ export default function Messages({ user }) {
     if (!token) return;
 
     // Connect to Socket.io server
-    socketRef.current = io("http://localhost:5000", {
-      auth: { token },
-    });
+    // src/components/Messages.jsx
+socketRef.current = io(process.env.REACT_APP_BACKEND_URL || "http://localhost:5000", {
+  auth: { token },
+});
+
 
     // Listen for incoming messages
     socketRef.current.on("receiveMessage", (msg) => {
