@@ -21,6 +21,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
     setUser(null);
     navigate("/login");
   };
@@ -28,16 +29,14 @@ export default function Navbar() {
   return (
     <nav className="bg-purple-600 text-white p-4 flex justify-between items-center">
       <Link to="/" className="font-bold text-xl">
-        EduVerse
+        EduConnect
       </Link>
 
-      <div className="space-x-4">
+      <div className="space-x-4 flex items-center">
         <Link to="/">Home</Link>
         <Link to="/about">About</Link>
         <Link to="/contact">Contact</Link>
         <Link to="/courses">Courses</Link>
-        <Link to="/my-courses">My Courses</Link>
-
 
         {user && user.role === "student" && <Link to="/my-courses">My Courses</Link>}
         {user && user.role === "tutor" && <Link to="/add-course">Add Course</Link>}
@@ -49,7 +48,10 @@ export default function Navbar() {
             <Link to="/register">Register</Link>
           </>
         ) : (
-          <button onClick={handleLogout} className="bg-red-500 px-2 py-1 rounded hover:bg-red-600">
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+          >
             Logout
           </button>
         )}

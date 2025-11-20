@@ -1,91 +1,49 @@
-import React, { useState, useEffect } from "react";
+// src/pages/AddCourse.jsx
+import React, { useEffect, useState } from "react";
+import api from "../api/axios";
+import { useAuth } from "../context/AuthProvider";
 import { useNavigate } from "react-router-dom";
 
 export default function AddCourse() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [existingCourses, setExistingCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const navigate = useNavigate();
 
-  // Fetch all courses to check duplicates
   useEffect(() => {
-    fetch("http://localhost:5000/api/courses")
-      .then((res) => res.json())
-      .then((data) => setExistingCourses(data))
-      .catch((err) => console.error(err));
-  }, []);
+    if (!user) navigate("/login");
+    if (user && user.role !== "instructor") {
+      // block non-instructors
+      // optionally redirect or show an error
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
-
-    // Check if course already exists
-    const duplicate = existingCourses.find(
-      (course) => course.title.toLowerCase() === title.toLowerCase()
-    );
-    if (duplicate) {
-      setError("This course already exists!");
-      return;
-    }
-
+    setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/courses", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ title, description }),
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        setSuccess("Course added successfully!");
-        setTitle("");
-        setDescription("");
-        // Optionally redirect to home or courses
-        navigate("/courses");
-      } else {
-        const data = await res.json();
-        setError(data.message || "Failed to add course.");
-      }
+      const instructorName = user?.name || "Instructor";
+      const res = await api.post("/courses", { title, description, instructor: instructorName });
+      alert("Course added");
+      navigate("/courses");
     } catch (err) {
-      console.error(err);
-      setError("An error occurred while adding the course.");
+      setError(err?.response?.data?.message || "Failed to add course");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-lg mx-auto p-6 mt-6 border rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Add a New Course</h1>
-      {error && <p className="text-red-500 mb-2">{error}</p>}
-      {success && <p className="text-green-500 mb-2">{success}</p>}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="Course Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          className="border p-2 rounded"
-        />
-        <textarea
-          placeholder="Course Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
-          className="border p-2 rounded"
-        />
-        <button
-          type="submit"
-          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-        >
-          Add Course
-        </button>
+    <div className="p-6 max-w-md mx-auto">
+      <h2 className="text-2xl font-bold mb-4">Add Course</h2>
+      {error && <div className="text-red-500 mb-3">{error}</div>}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <input required value={title} onChange={e=>setTitle(e.target.value)} placeholder="Course title" className="border p-2 rounded" />
+        <textarea required value={description} onChange={e=>setDescription(e.target.value)} placeholder="Description" className="border p-2 rounded" />
+        <button disabled={loading} type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded">{loading ? "Adding..." : "Add Course"}</button>
       </form>
     </div>
   );
