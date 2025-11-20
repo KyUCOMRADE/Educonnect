@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
 import MyCourses from "./pages/MyCourses";
 import AddCourse from "./pages/AddCourse";
+import DashboardWrapper from "./pages/DashboardWrapper";
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/courses" element={<Courses />} />
           <Route path="/add-course" element={<AddCourse />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<DashboardWrapper />} />
           <Route path="/my-courses" element={<MyCourses />} />
         </Routes>
       </main>
